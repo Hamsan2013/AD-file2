@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AD File – presented by AD Developers</title>
+<style>
+  @keyframes gradientShift {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+  }
+  body {
+    margin:0;
+    font-family:Segoe UI,Arial,sans-serif;
+    color:#fff;
+    text-align:center;
+    background:linear-gradient(45deg,#ff004f,#ff7300,#fffb00,#48ff00,#00ffd5,#002bff,#7a00ff);
+    background-size:400% 400%;
+    animation:gradientShift 10s ease infinite;
+  }
+  #splash{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    display:flex;align-items:center;justify-content:center;
+    background:#000;
+    z-index:9999;
+    animation:fadeOut 3s forwards;
+    animation-delay:3s;
+  }
+  #splash h1{
+    font-size:3rem;
+    letter-spacing:2px;
+    background:linear-gradient(to right,#ff004f,#ff7300,#fffb00);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    animation:pulse 2s infinite alternate;
+    text-align:center;
+  }
+  @keyframes fadeOut{to{opacity:0;visibility:hidden}}
+  @keyframes pulse{0%{transform:scale(1);}100%{transform:scale(1.1);}}
+  .container{max-width:800px;margin:100px auto;padding:20px;background:rgba(0,0,0,0.5);border-radius:15px;}
+  h2{margin-top:0;}
+  #fileInput{margin-top:15px}
+  button{padding:10px 20px;font-size:1rem;margin:10px;cursor:pointer;border:none;border-radius:8px;background:#fff;color:#111;font-weight:bold;}
+  .file-item{background:rgba(255,255,255,0.1);padding:15px;margin-top:20px;border-radius:10px;}
+  img,video{max-width:90%;max-height:300px;margin-top:10px;border-radius:10px;}
+  a.download-link{display:inline-block;margin:5px;color:#fffb00;}
+</style>
+</head>
+<body>
+<div id="splash"><h1>AD DEVELOPERS<br>PRESENTS<br>AD FILE</h1></div>
+
+<div class="container" id="mainContent" style="display:none;">
+  <h2>AD File – Upload & Share (2 GB max / 14‑day link)</h2>
+  <input type="file" id="fileInput">
+  <button onclick="handleUpload()">Upload</button>
+  <div id="fileList"></div>
+</div>
+
+<script>
+const uploadedBlobs=[];
+window.onload=function(){
+  setTimeout(()=>{document.getElementById('splash').style.display='none';
+  document.getElementById('mainContent').style.display='block';},4000);
+};
+
+async function handleUpload(){
+  const inp=document.getElementById('fileInput');
+  if(inp.files.length===0){alert('Choose a file first.');return;}
+  const f=inp.files[0];
+  const formData=new FormData();
+  formData.append('file',f);
+  const res=await fetch('https://file.io/?expires=14d',{method:'POST',body:formData});
+  if(!res.ok){alert('Upload failed.');return;}
+  const data=await res.json();
+  if(!data.success){alert('Error: '+data.message);return;}
+  uploadedBlobs.push({name:f.name,type:f.type,url:data.link});
+  loadFileList();
+  alert('✅ Uploaded! Share the link.');
+}
+
+function loadFileList(){
+  const c=document.getElementById('fileList');
+  c.innerHTML='';
+  uploadedBlobs.forEach(file=>{
+    const d=document.createElement('div');d.className='file-item';
+    if(file.type.startsWith('image')){
+      const im=document.createElement('img');im.src=file.url;d.appendChild(im);
+    }else if(file.type.startsWith('video')){
+      const v=document.createElement('video');v.src=file.url;v.controls=true;d.appendChild(v);
+    }
+    const p=document.createElement('p');p.textContent=file.name;d.appendChild(p);
+    const a=document.createElement('a');a.href=file.url;a.target='_blank';a.textContent='Download (one‑time)';a.className='download-link';d.appendChild(a);
+    const btn=document.createElement('button');btn.textContent='Copy Link';btn.onclick=()=>{navigator.clipboard.writeText(file.url);alert('Copied!');};d.appendChild(btn);
+    c.appendChild(d);
+  });
+}
+</script>
+</body>
+</html>
